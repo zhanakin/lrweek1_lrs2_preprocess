@@ -16,7 +16,6 @@ def parse_args():
 
 def mk_datalist(args):
 
-
     print("读取数据列表") #先构建数据列表，方便后续取数据
     # with open(os.path.join(args.data_path,"pretrain.txt")) as f:
     #     pretrain_filelist = [prefix.strip() for prefix in f.readlines()]

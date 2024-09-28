@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from torchvision import transforms as T
 import lmdb
-# python .\lrs2_origin_preprocess.py --datalist_path .\lrs2_listed\data.npz --data_prefix .\data\main --origin_lmdb_path .\lmdb_data\
+# python .\lrs2_origin_preprocess.py --datalist_path .\lrs2_listed\data.npz --data_prefix .\data --origin_lmdb_path .\lmdb_data\
 
 roiSize = 112
 jpeg = TurboJPEG()
@@ -23,16 +23,14 @@ class LRS2InferenceDataset(Dataset):
         new_datalist.extend(datalist['val_datalist'].tolist())
         new_datalist.extend(datalist['test_datalist'].tolist())
         self.datalist = new_datalist
-        
-
-        
-        
-        
+               
     def __getitem__(self, index):
         item = self.datalist[index]
         vidname = os.path.join(self.data_prefix,item['path']+'.mp4')
+        print(vidname)
         video = []
         cap = cv.VideoCapture(vidname)
+        print(int(cap.get(cv.CAP_PROP_FRAME_COUNT)))
         while True:
             ret,frame = cap.read()
             if not ret:
@@ -42,8 +40,7 @@ class LRS2InferenceDataset(Dataset):
             roi = frame[int(112-(roiSize/2)):int(112+(roiSize/2)), int(112-(roiSize/2)):int(112+(roiSize/2))]
             video.append(roi)
         cap.release()
-            
-        
+   
         # feat = self.feature_extractor(video).squeeze(1).detach().cpu()
         return video,item['id'],item['video_len']
         
@@ -67,22 +64,23 @@ if __name__ == "__main__":
     args = parse_args()
     lrs2_dataset = LRS2InferenceDataset(args.datalist_path,args.data_prefix)
     # loader = DataLoader(lrs2_dataset,batch_size=1,num_workers=8,prefetch_factor=2,collate_fn=lambda x:x[0])
-    loader = DataLoader(lrs2_dataset,batch_size=1,num_workers=8,prefetch_factor=2,collate_fn=collate_fn)
-    env = lmdb.open(args.origin_lmdb_path,lock=False,map_size=3e11)
-    txn = env.begin(write=True)
+    loader = DataLoader(lrs2_dataset,batch_size=1,num_workers=1,prefetch_factor=2,collate_fn=collate_fn)
+    # env = lmdb.open(args.origin_lmdb_path,lock=False,map_size=3e11)
+    # txn = env.begin(write=True)
 
     for idx,(videos,id,video_len) in enumerate(tqdm(loader)):
+        print('idx=',idx,',len(videos)=',len(videos),',video_len=',video_len)
         assert len(videos) == video_len
         for f_id,frame in enumerate(videos):
             #success, encoded_frame = cv.imencode('.png', frames)
             frame_name = id + f'-{f_id}'
             encoded_frame = jpeg.encode(frame, jpeg_subsample=TJSAMP_GRAY,quality=100)
-            txn.put(frame_name.encode(), encoded_frame)
+            # txn.put(frame_name.encode(), encoded_frame)
 
-        if idx % COMMIT_CYCLE == COMMIT_CYCLE-1:
-            txn.commit()
-            txn = env.begin(write=True)
-    txn.commit()
+    #     if idx % COMMIT_CYCLE == COMMIT_CYCLE-1:
+    #         txn.commit()
+    #         txn = env.begin(write=True)
+    # txn.commit()
     print('Done')
     
     # if args.feature_type == 'feat':
