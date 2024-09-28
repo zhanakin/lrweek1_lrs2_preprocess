@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from torchvision import transforms as T
 import lmdb
-# python .\lrs2_origin_preprocess.py --datalist_path [.\lrs2_listed\train_datalist.npy,.\lrs2_listed\val_datalist.npy,.\lrs2_listed\test_datalist.npy] --data_prefix .\data\main --origin_lmdb_path .\lmdb_data\
+# python .\lrs2_origin_preprocess.py --datalist_path .\lrs2_listed\data.npz --data_prefix .\data\main --origin_lmdb_path .\lmdb_data\
 
 roiSize = 112
 jpeg = TurboJPEG()
